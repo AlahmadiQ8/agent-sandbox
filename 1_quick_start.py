@@ -1,23 +1,11 @@
-from openai import AsyncAzureOpenAI
 from openai.types.responses import ResponseTextDeltaEvent
-from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner, set_default_openai_client
+from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner
 from pydantic import BaseModel
-from dotenv import load_dotenv
 import asyncio
-import os
-
-load_dotenv()
+from agents import set_default_openai_client
+import setup_azure_openai_client
 
 model_name = "gpt-4.1"
-
-# Create OpenAI client using Azure OpenAI
-openai_client = AsyncAzureOpenAI(
-    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-    api_version=os.getenv("AZURE_OPENAI_API_VERSION"),
-    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-)
-
-set_default_openai_client(client=openai_client, use_for_tracing=False)
 
 class HomeworkOutput(BaseModel):
     is_homework: bool
