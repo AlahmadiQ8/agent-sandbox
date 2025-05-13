@@ -37,7 +37,7 @@ response = client.chat.completions.create(
     top_p=1.0,
     frequency_penalty=0.0,
     presence_penalty=0.0,
-    model=deployment
+    model=model_name
 )
 
 print(response.choices[0].message.content)

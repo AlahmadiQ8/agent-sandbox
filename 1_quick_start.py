@@ -2,7 +2,6 @@ from openai.types.responses import ResponseTextDeltaEvent
 from agents import Agent, InputGuardrail, GuardrailFunctionOutput, Runner
 from pydantic import BaseModel
 import asyncio
-from agents import set_default_openai_client
 import setup_azure_openai_client
 
 model_name = "gpt-4.1"
