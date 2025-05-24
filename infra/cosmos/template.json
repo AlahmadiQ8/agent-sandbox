@@ -1,0 +1,81 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "name": {
+            "type": "String"
+        },
+        "location": {
+            "type": "String"
+        },
+        "locationName": {
+            "type": "String"
+        },
+        "defaultExperience": {
+            "type": "String"
+        },
+        "isZoneRedundant": {
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.DocumentDb/databaseAccounts",
+            "apiVersion": "2025-05-01-preview",
+            "name": "[parameters('name')]",
+            "location": "[parameters('location')]",
+            "tags": {
+                "defaultExperience": "[parameters('defaultExperience')]",
+                "hidden-workload-type": "Production",
+                "hidden-cosmos-mmspecial": ""
+            },
+            "kind": "GlobalDocumentDB",
+            "properties": {
+                "databaseAccountOfferType": "Standard",
+                "locations": [
+                    {
+                        "id": "[concat(parameters('name'), '-', parameters('location'))]",
+                        "failoverPriority": 0,
+                        "locationName": "[parameters('locationName')]",
+                        "isZoneRedundant": "[parameters('isZoneRedundant')]"
+                    }
+                ],
+                "backupPolicy": {
+                    "type": "Periodic",
+                    "periodicModeProperties": {
+                        "backupIntervalInMinutes": 240,
+                        "backupRetentionIntervalInHours": 8,
+                        "backupStorageRedundancy": "Geo"
+                    }
+                },
+                "isVirtualNetworkFilterEnabled": false,
+                "virtualNetworkRules": [],
+                "ipRules": [
+                    {
+                        "ipAddressOrRange": "4.210.172.107"
+                    },
+                    {
+                        "ipAddressOrRange": "13.88.56.148"
+                    },
+                    {
+                        "ipAddressOrRange": "13.91.105.215"
+                    },
+                    {
+                        "ipAddressOrRange": "40.91.218.243"
+                    },
+                    {
+                        "ipAddressOrRange": "178.61.224.228"
+                    }
+                ],
+                "dependsOn": [],
+                "minimalTlsVersion": "Tls12",
+                "capabilities": [],
+                "capacityMode": "Serverless",
+                "enableFreeTier": false,
+                "disableLocalAuth": false
+            }
+        }
+    ],
+    "outputs": {}
+}
