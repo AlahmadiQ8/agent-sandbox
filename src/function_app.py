@@ -1,22 +1,23 @@
 from http import HTTPMethod
+import json
+from agents import RunItem, Runner, TResponseInputItem
 import azure.functions as func
 import logging
+from main_agent import Context, ynab_agent
 
 app = func.FunctionApp(http_auth_level=func.AuthLevel.FUNCTION)
 
 @app.route(route="chat_completion", methods=[HTTPMethod.POST])
-def chat_completion(req: func.HttpRequest) -> func.HttpResponse:
+async def chat_completion(req: func.HttpRequest) -> func.HttpResponse:
     # logging.info('Python HTTP trigger function processed a request.')
 
-    req_body = req.get_json()
-    name = req_body.get('name')
+    req_body: list[TResponseInputItem] = req.get_json()
 
-    logging.info(req.get_json())
+    result = await Runner.run(ynab_agent, req_body, context=Context())
+    
+    logging.info(result.new_items)
             
-    if name:
-        return func.HttpResponse(f"Hello, {name}. This HTTP triggered function executed successfully.")
-    else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response.",
-             status_code=200
-        )
+    return func.HttpResponse(
+        json.dumps([item.to_input_item() for item in result.new_items]),
+        mimetype="application/json",
+    )

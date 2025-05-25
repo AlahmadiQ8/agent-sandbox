@@ -74,21 +74,3 @@ ynab_agent = Agent[Context](
     # output_type=YNABTransactionOutput,
     tools=[store_transaction_to_ynab_tool],
 )
-
-async def main():
-    input_items: list[TResponseInputItem] = []
-    context = Context()
-    while True:
-        user_input = input("Enter your message: ")
-
-        with trace("YNAB Agent", group_id="ynab"):
-            input_items.append({"content": user_input, "role": "user"})
-            result = await Runner.run(ynab_agent, input_items, context=context)
-            print(result.final_output)
-            input_items = result.to_input_list()
-            # print input_items as formatted json data using json dump
-            print(json.dumps(input_items, indent=4))
-
-
-if __name__ == "__main__":
-    asyncio.run(main())
