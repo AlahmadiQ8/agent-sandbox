@@ -173,4 +173,7 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
+AzuriteConfig
 __azurite_*
+__blobstorage_*
+__queuestorage_*
