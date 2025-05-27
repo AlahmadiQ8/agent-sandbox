@@ -1,5 +1,11 @@
 # Mohammad's Personal AI Assistent
 
+## Running Tests 
+
+```
+python -m src.tests.test_cosmos_chat_history_store_integration
+```
+
 ## Flow
 
 1. Parse Transaction Info

@@ -175,5 +175,8 @@ cython_debug/
 
 AzuriteConfig
 __azurite_*
-__blobstorage_*
-__queuestorage_*
+# Azurite artifacts
+__blobstorage__
+__queuestorage__
+__azurite_db*__.json
+.python_packages
