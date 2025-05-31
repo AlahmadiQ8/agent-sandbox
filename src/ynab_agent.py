@@ -4,30 +4,73 @@ from openai.types.responses import ResponseTextDeltaEvent
 from agents import Agent,function_tool, TResponseInputItem, trace, InputGuardrail, GuardrailFunctionOutput, Runner, RunContextWrapper
 from pydantic import BaseModel
 import asyncio
+import os
 import setup_azure_openai_client
 from datetime import datetime
+import requests
+import logging
 
 model_name = "gpt-4.1"
 
 class Context(BaseModel):
     today: str | None = None
 
+BUDGET_ID = os.getenv("YNAB_BUDGET_ID")
+ACCESS_TOKEN = os.getenv("YNAB_API_KEY")
+YNAB_CREATE_TRANSACTION_URL = f"https://api.ynab.com/v1/budgets/{BUDGET_ID}/transactions"
+
 @function_tool
-def store_transaction_to_ynab_tool(amount: float, currency: str, payee: str, date: str) -> bool:
+def store_transaction_to_ynab_tool(amount: float, currency: str, payee: str, date: str, account_last_4_digits: int) -> bool:
     """
-    Stores a transaction in YNAB (You Need A Budget).
+    Store a transaction in YNAB (You Need A Budget).
 
     Args:
-        amount (float): The amount of the transaction.
-        currency (str): The currency of the transaction (e.g., 'USD', 'EUR').
-        payee (str): The name of the payee for the transaction.
-        date (str): The date of the transaction in 'YYYY-MM-DD' format.
+        amount (float): The transaction amount. Positive for credit, negative for debit.
+        currency (str): ISO currency code (e.g., 'KWD', 'USD').
+        payee (str): The payee or merchant name.
+        date (str): Transaction date in 'YYYY-MM-DD' format.
+        account_last_4_digits (str): Last 4 digits of the account or card number.
 
     Returns:
         bool: True if the transaction was stored successfully, False otherwise.
     """
     # Placeholder function to simulate storing transaction in YNAB
-    print(f"Storing transaction in YNAB: {amount} {currency} to {payee} on {date}")
+    logging.info(f"Storing transaction in YNAB: {amount} {currency} to {payee} on {date} (Account: {account_last_4_digits})")
+
+    account_lookup = {
+        9226: "8abb8fba-a913-41c8-bfa4-1944be548eaa",
+        1849: "98df622c-509e-4230-a243-56d6d625e740",
+        5893: "c5f83ca5-a2a8-4628-b0e7-f299d5a6e452",
+        3642: "ae0f189f-99fc-4902-a8f8-95630635a4d9",
+    }
+    
+    account_id = account_lookup.get(account_last_4_digits, None)
+    if account_id is None:
+        logging.info(f"Account with last 4 digits {account_last_4_digits} not found.")
+        return False
+    if not BUDGET_ID:
+        logging.info("YNAB_BUDGET_ID environment variable is not set.")
+        return False
+    
+    response = requests.post(
+        YNAB_CREATE_TRANSACTION_URL,
+        headers={ "Authorization": f"Bearer {ACCESS_TOKEN}" },
+        json = {
+            "transaction": {
+                "account_id": account_id,
+                "date": date,
+                "amount": int(amount * 1000),  # YNAB uses milliunits
+                "memo": f"AI GENERATED - {payee}",
+                "cleared": "uncleared",
+                "flag_color": "red"
+            }
+        }
+    )
+
+    if (response.status_code != 201):
+        logging.info(f"Failed to store transaction in YNAB: {response.status_code} - {response.text}")
+        return False
+
     return True
 
 def prompt(context: RunContextWrapper[Context],  agent: Agent[Context]) -> str:  
@@ -42,8 +85,15 @@ You need to extract the following information from the notification messages and
 - currency: ISO currency code
 - payee: The payee of the transaction
 - date: date of the transaction in the format yyyy-MM-dd
+- account id: the last 4 digits of the account number
 
-If you cant extract all the information, ask follow up questions. do NOT guess or make up an answer. Don't be verbose, use breif and concise messages.
+Currently, the user have the following accounts with their last 4 digits:
+- Burgan: 9226
+- NBK: 5893
+- Infinite: 3642
+- Weyay: 1849
+
+If you can't extract all the information, ask follow up questions. When you ask about account last 4 digits, mention the account name as well so the user can recognize the accounts. do NOT guess or make up an answer. Don't be verbose, use breif and concise messages.
 
 If you get regular user query, guide them to store the transaction to YNAB
 
@@ -71,6 +121,5 @@ ynab_agent = Agent[Context](
     instructions=prompt,
     model=model_name,
     handoff_description="Specialist agent for YNAB transactions",
-    # output_type=YNABTransactionOutput,
     tools=[store_transaction_to_ynab_tool],
 )

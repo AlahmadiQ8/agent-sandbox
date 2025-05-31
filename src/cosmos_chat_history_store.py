@@ -53,7 +53,7 @@ class CosmosChatHistoryStore:
         for item in items:
             self.container.delete_item(item=item['id'], partition_key=chat_id)
 
-MAX_CHAT_HISTORY = 10
+MAX_CHAT_HISTORY = 50
 COSMOS_ENDPOINT = os.getenv("COSMOS_DB_ENDPOINT")
 COSMOS_KEY = os.getenv("COSMOS_DB_KEY")
 COSMOS_DB = os.getenv("COSMOS_DB_NAME", "testdb")
